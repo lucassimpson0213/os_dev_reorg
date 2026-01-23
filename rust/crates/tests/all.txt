@@ -1,0 +1,84 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/fedora/c/os_dev/rust/crates/kernel/Cargo.toml
+workspace: /home/fedora/c/os_dev/rust/Cargo.toml
+warning: the package `kernel` provides no linkable target
+  |
+  = note: this might cause `tests` to fail compilation
+  = note: this warning might turn into a hard error in the future
+  = help: consider adding 'dylib' or 'rlib' to key 'crate-type' in `kernel`'s Cargo.toml
+warning: the package `kernel` provides no linkable target
+  |
+  = note: this might cause `tests` to fail compilation
+  = note: this warning might turn into a hard error in the future
+  = help: consider adding 'dylib' or 'rlib' to key 'crate-type' in `kernel`'s Cargo.toml
+   Compiling kernel v0.1.0 (/home/fedora/c/os_dev/rust/crates/kernel)
+error[E0432]: unresolved import `uart_16550::SerialPort`
+  --> crates/kernel/src/drivers/serial.rs:4:5
+   |
+ 4 | use uart_16550::SerialPort;
+   |     ^^^^^^^^^^^^^^^^^^^^^^ no `SerialPort` in the root
+   |
+note: found an item that was configured out
+  --> /home/fedora/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/uart_16550-0.3.0/src/lib.rs:83:22
+   |
+82 | #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+   |          --------------------------------------------- the item is gated here
+83 | pub use crate::port::SerialPort;
+   |                      ^^^^^^^^^^
+
+warning: unused import: `idt::makeidt::IdtEntry`
+ --> crates/kernel/src/lib.rs:5:5
+  |
+5 | use idt::makeidt::IdtEntry;
+  |     ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `ffi::c_void`
+ --> crates/kernel/src/lib.rs:7:12
+  |
+7 | use core::{ffi::c_void, panic::PanicInfo};
+  |            ^^^^^^^^^^^
+
+error: unwinding panics are not supported without std
+  |
+  = help: using nightly cargo, use -Zbuild-std with panic="abort" to avoid unwinding
+  = note: since the core library is usually precompiled with panic="unwind", rebuilding your crate with panic="abort" may not be enough to fix the problem
+
+error[E0599]: no method named `lock` found for struct `SERIAL1` in the current scope
+  --> crates/kernel/src/drivers/serial.rs:16:13
+   |
+ 6 | / lazy_static! {
+ 7 | |     pub static ref SERIAL1: Mutex<SerialPort> = {
+ 8 | |         let mut serial = unsafe { SerialPort::new(0x3F8) }; // COM1
+ 9 | |         serial.init();
+10 | |         Mutex::new(serial)
+11 | |     };
+12 | | }
+   | |_- method `lock` not found for this struct
+...
+16 |       SERIAL1.lock().write_fmt(args).ok();
+   |               ^^^^ method not found in `SERIAL1`
+
+warning: variable does not need to be mutable
+  --> crates/kernel/src/idt/makeidt.rs:38:16
+   |
+38 |     pub fn isr(mut self, isr_routine: u32) -> Self {
+   |                ----^^^^
+   |                |
+   |                help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `low_bits`
+  --> crates/kernel/src/idt/makeidt.rs:39:13
+   |
+39 |         let low_bits = isr_routine & 0xFFFF;
+   |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_low_bits`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+warning: `kernel` (lib) generated 4 warnings
+error: could not compile `kernel` (lib) due to 3 previous errors; 4 warnings emitted

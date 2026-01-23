@@ -1,0 +1,22 @@
+# Build artifacts
+*.bin
+*.o
+*.elf
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Rust
+target/
+Cargo.lock
+
+# macOS
+.DS_Store
+
+# Misc
+*.log
+*.html
+*.excalidraw
+compile_commands.json

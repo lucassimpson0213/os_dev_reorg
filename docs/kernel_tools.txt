@@ -1,0 +1,33 @@
+file kernel
+readelf -h kernel
+readelf -S kernel
+readelf -l kernel
+nm kernel
+objdump -d -Mintel kernel
+:lcd %:p:h sets current directory to root of project
+inside neovim
+:map to view all keymaps
+:Telescope keymaps
+
+:map <leader>
+elfcat
+Ctrl-b space
+resize tmux windows
+
+
+common keymappings:
+<space><space> = open projects
+<space>pf = project file
+<space>ps is project search
+jaykay is go back to normal mode from insert mode
+<space>e is show diagnostic
+<space>vks is open keymaps in nvim
+:Telescope keymap is look up keymaps from telescope
+<space>cp compile current python file
+<space>cr compile current rust file
+:make is make current rust or c projecrt
+:copen is open the file of errors that you have from make
+<space>f format current selection
+
+
+

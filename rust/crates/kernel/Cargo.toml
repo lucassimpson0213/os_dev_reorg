@@ -1,0 +1,26 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+modular-bitfield = "0.13"
+uart_16550 = "=0.3.0"
+spin = { version = "0.9.8", default-features = false, features = ["mutex", "spin_mutex"] }
+lazy_static = { version = "1.4", features = ["spin_no_std"] }
+bitflags = "2.10.0"
+
+
+[lib]
+crate-type = ["staticlib"]
+test = true
+doctest = false
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+

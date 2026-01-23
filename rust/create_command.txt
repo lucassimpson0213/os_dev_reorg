@@ -1,0 +1,8 @@
+cargo new crates/kernel_core --lib
+
+cargo new crates/arch_x86 --lib
+cargo new crates/memory --lib
+cargo new crates/drivers --lib
+cargo new crates/elf --lib
+cargo new crates/tools --bin
+

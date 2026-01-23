@@ -1,0 +1,10 @@
+[build]
+target = "i686-os.json"
+
+[unstable]
+build-std = ["core"]
+build-std-features = ["compiler-builtins-mem"]
+
+[target.i686-unknown-none]
+linker = "i686-elf-gcc"
+
