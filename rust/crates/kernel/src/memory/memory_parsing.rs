@@ -1,6 +1,9 @@
-
 /*
 *:
+* extern unsigned int rust_parse_multiboot_map(uint32_t magic, uint32_t mbi_phys);
 *
 */
-pub fn
+
+pub fn rust_parse_multiboot_map(magic: u32, mbi_phys: u32) -> u32 {
+    return 0;
+}

@@ -23,8 +23,8 @@ pub extern "C" fn rust_ping() -> u32 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn rust_parse_multiboot_map(magic u32, mbi_phys u32) -> u32 {
-    return 0
+pub extern "C" fn rust_parse_multiboot_map(magic: u32, mbi_phys: u32) -> u32 {
+    return 0;
 }
 
 #[panic_handler]
