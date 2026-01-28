@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET="$HOME/c/os_dev/rust/crates/kernel/i686-os.json"
+TARGET="$HOME/code/c/os_dev/rust/crates/kernel/i686-os.json"
 ZFLAGS="-Z build-std=core,alloc -Z build-std-features=compiler-builtins-mem"
 
 # -----------------------------
@@ -14,8 +14,8 @@ cargo build -p elf --message-format=short
 # -----------------------------
 # i686 kernel (no_std) crates
 # -----------------------------
-cargo +nightly build -p kernel_core --target "$TARGET" $ZFLAGS
-cargo +nightly build -p memory --target "$TARGET" $ZFLAGS
-cargo +nightly build -p drivers --target "$TARGET" $ZFLAGS
-cargo +nightly build -p arch_x86 --target "$TARGET" $ZFLAGS
-cargo +nightly build -p kernel --target "$TARGET" $ZFLAGS
+cargo build -p kernel_core --target "$TARGET" $ZFLAGS
+cargo build -p memory --target "$TARGET" $ZFLAGS
+cargo build -p drivers --target "$TARGET" $ZFLAGS
+cargo build -p arch_x86 --target "$TARGET" $ZFLAGS
+cargo build -p kernel --target "$TARGET" $ZFLAGS

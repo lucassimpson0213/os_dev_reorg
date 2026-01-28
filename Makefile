@@ -1,7 +1,7 @@
 # =========================
 # Toolchain
 # =========================
-CC      := i686-elf-gcc
+CC      := $(HOME)/opt/cross/bin/i686-elf-gcc
 QEMU    := qemu-system-i386
 GDB     := gdb
 

@@ -217,7 +217,7 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
   init_gdt();
   rust_idt_entry();
   init_paging();
-
+  rust_parse_multiboot_map(0, 0);
   printk("%s", "\n");
   printk("%s", "Hello From Kernel land!\n");
 }

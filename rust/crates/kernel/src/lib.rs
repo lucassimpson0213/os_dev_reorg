@@ -26,7 +26,7 @@ pub extern "C" fn rust_ping() -> u32 {
 pub extern "C" fn rust_parse_multiboot_map(magic: u32, mbi_phys: u32) -> u32 {
     return 0;
 }
-
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
