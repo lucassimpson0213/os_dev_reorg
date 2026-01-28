@@ -5,6 +5,7 @@
 */
 use crate::serial_println
 pub fn rust_parse_multiboot_map(magic: u32, mbi_phys: u32) -> u32 {
+    serial_println!("make sure that this is printed");
     serial_println!("{:?}", magic);
     return 0;
 }
