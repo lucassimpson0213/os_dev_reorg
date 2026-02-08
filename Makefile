@@ -134,13 +134,15 @@ debug: kernel.elf
 	$(QEMU) -kernel kernel.elf -serial file:serial.log -s -S
 
 gdb: kernel.elf
-	$(GDB) -q -x gdbinit-qemu
+	$(GDB) -q -nh -nx  -x gdbinit-qemu
+run-test:
+	qemu-system-i386 -kernel kernel.elf -device isa-debug-exit,iobase=0xf4,iosize=0x04
 
 # =========================
 # Clean
 # =========================
 clean:
 	rm -rf $(BUILD_DIR) kernel.elf
-	cd rust && cargo clean
+	cd rust && cd crates && cd kernel &&  cargo clean
 
 .PHONY: all run debug gdb clean

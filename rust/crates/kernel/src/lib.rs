@@ -1,9 +1,10 @@
 #![no_std]
+#![no_main]
 pub mod drivers;
 pub mod idt;
 pub mod memory;
 
-use idt::makeidt::IdtEntry;
+use uart_16550::SerialPort;
 
 use core::{ffi::c_void, panic::PanicInfo};
 
@@ -26,7 +27,9 @@ pub extern "C" fn rust_ping() -> u32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_parse_multiboot_map(magic: u32, mbi_phys: u32) -> u32 {
-    memory_parsing::rust_parse_multiboot_map(magic, mbi_phys);
+    crate::memory::memory_parsing::rust_parse_multiboot_mapper(magic, mbi_phys);
+    unsafe { SerialPort::new(0x3F8) }.send(b'X');
+
     return 0;
 }
 #[cfg(not(test))]

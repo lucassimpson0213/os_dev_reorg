@@ -21,3 +21,4 @@ Cargo.lock
 *.html
 *.excalidraw
 compile_commands.json
+gdbinit

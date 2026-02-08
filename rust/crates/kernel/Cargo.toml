@@ -17,7 +17,10 @@ crate-type = ["staticlib"]
 test = true
 doctest = false
 
+
 [profile.dev]
+opt-level = 0
+debug = true
 panic = "abort"
 
 [profile.release]

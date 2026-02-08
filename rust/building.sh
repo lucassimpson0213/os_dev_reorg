@@ -14,9 +14,3 @@ cargo build -p elf --message-format=short
 # -----------------------------
 # i686 kernel (no_std) crates
 # -----------------------------
-cargo +nightly build -p kernel --target i686-os $ZFLAGS
-
-
-
-
-
