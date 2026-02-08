@@ -82,6 +82,14 @@ $(ISO_DIR)/boot:
 iso_root: kernel.elf | $(ISO_DIR)/boot $(GRUB_DIR)
 	cp $(KERNEL_BIN) $(ISO_DIR)/boot/$(KERNEL_BIN)
 	$(MAKE) $(GRUB_DIR)/grub.cfg
+iso: iso_root
+	grub2-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
+
+run-grub: iso
+	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -serial stdio
+
+debug-grub: iso
+	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -serial file:serial.log -s -S
 
 
 
