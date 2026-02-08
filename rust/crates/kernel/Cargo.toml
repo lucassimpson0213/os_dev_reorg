@@ -10,6 +10,7 @@ uart_16550 = "0.3"
 spin = { version = "0.9.8", default-features = false, features = ["mutex", "spin_mutex"] }
 lazy_static = { version = "1.4", features = ["spin_no_std"] }
 bitflags = "2.10.0"
+multiboot = "0.8.0"
 
 
 [lib]
