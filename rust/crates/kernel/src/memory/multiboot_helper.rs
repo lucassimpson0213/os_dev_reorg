@@ -7,7 +7,8 @@ struct Mem;
 
 impl MemoryManagement for Mem {
     unsafe fn paddr_to_slice(&self, addr: PAddr, size: usize) -> Option<&'static [u8]> {
-        let ptr = mem::transmute(addr);
+        let ptr = (addr as usize) as *const u8;
+
         Some(slice::from_raw_parts(ptr, size))
     }
 
