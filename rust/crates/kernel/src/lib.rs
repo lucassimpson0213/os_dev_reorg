@@ -7,6 +7,8 @@ use idt::makeidt::IdtEntry;
 
 use core::{ffi::c_void, panic::PanicInfo};
 
+use crate::memory::memory_parsing;
+
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_hello() -> u32 {
     0xCAFEBABE
@@ -24,6 +26,7 @@ pub extern "C" fn rust_ping() -> u32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_parse_multiboot_map(magic: u32, mbi_phys: u32) -> u32 {
+    memory_parsing::rust_parse_multiboot_map(magic, mbi_phys);
     return 0;
 }
 #[cfg(not(test))]

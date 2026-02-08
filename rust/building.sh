@@ -14,8 +14,9 @@ cargo build -p elf --message-format=short
 # -----------------------------
 # i686 kernel (no_std) crates
 # -----------------------------
-cargo build -p kernel_core --target "$TARGET" $ZFLAGS
-cargo build -p memory --target "$TARGET" $ZFLAGS
-cargo build -p drivers --target "$TARGET" $ZFLAGS
-cargo build -p arch_x86 --target "$TARGET" $ZFLAGS
-cargo build -p kernel --target "$TARGET" $ZFLAGS
+cargo +nightly build -p kernel --target i686-os $ZFLAGS
+
+
+
+
+

@@ -1,9 +1,13 @@
 # =========================
 # Toolchain
 # =========================
-CC      := $(HOME)/opt/cross/bin/i686-elf-gcc
+CC      := i686-elf-gcc
 QEMU    := qemu-system-i386
 GDB     := gdb
+ISO_DIR     := iso
+GRUB_DIR    := $(ISO_DIR)/boot/grub
+KERNEL_BIN  := kernel.elf
+ISO_IMAGE   := myos.iso
 
 # =========================
 # Directories
@@ -57,6 +61,32 @@ C_SRCS := $(KERNEL_DIR)/kernel.c \
 ASM_OBJS := $(patsubst $(SRC_DIR)/%.s,$(BUILD_DIR)/%.o,$(ASM_SRCS))
 C_OBJS   := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_SRCS))
 OBJS     := $(ASM_OBJS) $(C_OBJS)
+#==========================
+#GRUB SECTION
+#=========================
+$(GRUB_DIR)/grub.cfg: | $(GRUB_DIR)
+	@printf '%s\n' \
+	'set timeout=0' \
+	'set default=0' \
+	'' \
+	'menuentry "my kernel" {' \
+	'    multiboot /boot/$(KERNEL_BIN)' \
+	'    boot' \
+	'}' > $@
+
+$(GRUB_DIR):
+	mkdir -p $(GRUB_DIR)
+
+$(ISO_DIR)/boot:
+	mkdir -p $(ISO_DIR)/boot
+iso_root: kernel.elf | $(ISO_DIR)/boot $(GRUB_DIR)
+	cp $(KERNEL_BIN) $(ISO_DIR)/boot/$(KERNEL_BIN)
+	$(MAKE) $(GRUB_DIR)/grub.cfg
+
+
+
+
+
 
 # =========================
 # Default

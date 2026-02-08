@@ -1,4 +1,4 @@
-#tinclude "gdt.h"
+#include "gdt.h"
 #include "kernel_h.h"
 #include "multiboot.h"
 #include "pmm.h"
@@ -192,7 +192,8 @@ void traverse_multiboot_mmap(uint32_t mbi_phys, struct MemoryRegion regions[]) {
 }
 
 void kernel_main(uint32_t magic, uint32_t mbi_phys) {
-  extern unsigned int rust_parse_multiboot_map(uint32_t magic, uint32_t mbi_phys);
+  // extern unsigned int rust_parse_multiboot_map(uint32_t magic,
+  //                                             uint32_t mbi_phys);
   extern unsigned int rust_ping(void);
   int sum = sum3(1, 2, 3);
   printk("%d \n", sum);
@@ -217,7 +218,7 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
   init_gdt();
   rust_idt_entry();
   init_paging();
-  rust_parse_multiboot_map(0, 0);
+  // rust_parse_multiboot_map(0, 0);
   printk("%s", "\n");
   printk("%s", "Hello From Kernel land!\n");
 }
