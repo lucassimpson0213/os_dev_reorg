@@ -6,6 +6,8 @@
 
 use uart_16550::SerialPort;
 
+use crate::qemu::{self, qemu_testing};
+
 const MB1_BOOTLOADER_MAGIC: u32 = 0x2BADB002;
 const MB2_BOOTLOADER_MAGIC: u32 = 0x36D76289;
 
@@ -16,27 +18,25 @@ const MB2_BOOTLOADER_MAGIC: u32 = 0x36D76289;
 *  it can be is 16 bytes
 */
 
-#[macro_export]
-macro_rules! kassert {
-    ($cond:expr, $msg:expr) => {{
-        if !$cond {
-            $crate::printing::serial_write_string("ASSERT FAILED: ");
-            $crate::printing::serial_write_string($msg);
-            $crate::printing::serial_write_string(" @ ");
-            $crate::printing::serial_write_string(file!());
-            $crate::printing::serial_write_string(":");
-            $crate::printing::serial_write_string(stringify!(line!()));
-            $crate::printing::serial_newline();
-
-            // Choose whatever failure code you want; keep it consistent.
-            $crate::ktesting::qemu_exit(0x11);
-        }
-    }};
-}
-
 pub fn rust_parse_multiboot_mapper(magic: u32, mbi_phys: u32) -> u32 {
     if magic == MB1_BOOTLOADER_MAGIC || magic == MB2_BOOTLOADER_MAGIC {
         printing::serial_write_string("boot loader is indeed activated :)");
+    }
+    match magic {
+        MB1_BOOTLOADER_MAGIC => {
+            printing::serial_write_string("kernel is using multiboot 1");
+        }
+        MB2_BOOTLOADER_MAGIC => {
+            printing::serial_write_string("kernel is using multiboot 2");
+        }
+        _ => {
+            printing::serial_write_string("multi boot has not been idenified");
+            let subsys = crate::qemu::qemu_testing::subsys::MEMORY;
+            let stage = crate::qemu::qemu_testing::stage::INIT;
+            let error = qemu_testing::err::DOUBLE_FAULT;
+            let info = 0x01;
+            crate::qemu::qemu_testing::qemu_panic(subsys, stage, error, info)
+        }
     }
 
     0
