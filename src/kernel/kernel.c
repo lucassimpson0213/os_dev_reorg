@@ -126,7 +126,7 @@ void terminal_write(const char *data, size_t size) {
     terminal_putchar(data[i]);
 }
 
-void terminal_writestring(const char *data) {
+void terminal_write_string(const char *data) {
   terminal_write(data, strlen(data));
 }
 
@@ -195,29 +195,31 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   extern unsigned int rust_parse_multiboot_map(uint32_t magic,
                                                uint32_t mbi_phys);
-
   extern unsigned int rust_ping(void);
   int sum = sum3(1, 2, 3);
+  printk("got here1");
   printk("%d \n", sum);
   size_t result = serial_init();
+  printk("got here 2");
   struct MemoryRegion regions[MAX_REGIONS];
-
+  printk("got here 3");
   test_pmm();
-
+  printk("got here 4");
   print_hex64(regions->base);
   printk("\n");
   print_hex64(regions->len);
   printk("\n");
   print_hex64(regions->base + regions->len);
   printk("\n");
+  init_gdt();
   gdt_flush();
 
   traverse_multiboot_mmap(mbi_phys, regions);
 
   terminal_initialize();
 
-  terminal_writestring("hello from kernel land!");
-  init_gdt();
+  printk("hello from kernel land!");
+
   rust_idt_entry();
   init_paging();
 

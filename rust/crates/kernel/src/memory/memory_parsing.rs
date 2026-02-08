@@ -41,9 +41,6 @@ pub fn rust_parse_multiboot_mapper(magic: u32, mbi_phys: u32) -> u32 {
         serial.send(b'L');
     }
 
-    let multiboot_structure = mbi_phys as *const u8;
-    let total_size = unsafe { *multiboot_structure };
-    let reserved = unsafe { multiboot_structure.add(4) };
     0
 }
 
