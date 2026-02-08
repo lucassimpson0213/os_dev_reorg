@@ -3,6 +3,7 @@
 pub mod drivers;
 pub mod idt;
 pub mod memory;
+pub mod qemu;
 
 use uart_16550::SerialPort;
 

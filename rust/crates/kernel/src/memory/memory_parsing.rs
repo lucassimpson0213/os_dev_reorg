@@ -41,6 +41,10 @@ pub fn rust_parse_multiboot_mapper(magic: u32, mbi_phys: u32) -> u32 {
         serial.send(b'L');
     }
 
+    if 1==1 {
+        let subsystem = crate::qemu::q
+        crate::qemu::qemu_testing::panic_code()
+    }
     if 1 == 1 {
         ktesting::qemu_exit(1);
     }
