@@ -36,17 +36,7 @@ macro_rules! kassert {
 
 pub fn rust_parse_multiboot_mapper(magic: u32, mbi_phys: u32) -> u32 {
     if magic == MB1_BOOTLOADER_MAGIC || magic == MB2_BOOTLOADER_MAGIC {
-        let mut serial = unsafe { SerialPort::new(0x3F8) };
-        serial.init();
-        serial.send(b'L');
-    }
-
-    if 1==1 {
-        let subsystem = crate::qemu::q
-        crate::qemu::qemu_testing::panic_code()
-    }
-    if 1 == 1 {
-        ktesting::qemu_exit(1);
+        printing::serial_write_string("boot loader is indeed activated :)");
     }
 
     0
