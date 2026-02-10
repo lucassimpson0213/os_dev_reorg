@@ -197,20 +197,19 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
                                                uint32_t mbi_phys);
   extern unsigned int rust_ping(void);
   int sum = sum3(1, 2, 3);
-  printk("got here1");
-  printk("%d \n", sum);
+
   size_t result = serial_init();
-  printk("got here 2");
+
   struct MemoryRegion regions[MAX_REGIONS];
-  printk("got here 3");
+
   test_pmm();
-  printk("got here 4");
+
   print_hex64(regions->base);
-  printk("\n");
+
   print_hex64(regions->len);
-  printk("\n");
+
   print_hex64(regions->base + regions->len);
-  printk("\n");
+
   init_gdt();
   gdt_flush();
 
@@ -218,15 +217,10 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   terminal_initialize();
 
-  printk("hello from kernel land!");
-
   rust_idt_entry();
   init_paging();
 
   // rust_parse_multiboot_map(0, 0);
 
   rust_parse_multiboot_map(magic, mbi_phys);
-
-  printk("%s", "\n");
-  printk("%s", "Hello From Kernel land!\n");
 }
