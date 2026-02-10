@@ -70,7 +70,7 @@ $(GRUB_DIR)/grub.cfg: | $(GRUB_DIR)
 	'set default=0' \
 	'' \
 	'menuentry "my kernel" {' \
-	'    multiboot /boot/$(KERNEL_BIN)' \
+	'    multiboot2 /boot/$(KERNEL_BIN)' \
 	'    boot' \
 	'}' > $@
 
