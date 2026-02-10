@@ -1,20 +1,22 @@
-/* boot.s */
-.section .multiboot2
-.align 8
+/* Declare constants for the multiboot header. */
+.set ALIGN,    1<<0             /* align loaded modules on page boundaries */
+.set MEMINFO,  1<<1             /* provide memory map */
+.set FLAGS,    ALIGN | MEMINFO  /* this is the Multiboot 'flag' field */
+.set MAGIC,    0x1BADB002       /* 'magic number' lets bootloader find the header */
+.set CHECKSUM, -(MAGIC + FLAGS) /* checksum of above, to prove we are multiboot */
 
-/* Base header */
-.long 0xE85250D6                /* magic */
-.long 0                         /* architecture: 0 = i386 */
-.long header_end - header_start /* header length (bytes) */
-.long -(0xE85250D6 + 0 + (header_end - header_start)) /* checksum */
-
-header_start:
-/* Required end tag */
-.short 0                        /* type */
-.short 0                        /* flags */
-.long 8                         /* size */
-
-header_end:
+/* 
+Declare a multiboot header that marks the program as a kernel. These are magic
+values that are documented in the multiboot standard. The bootloader will
+search for this signature in the first 8 KiB of the kernel file, aligned at a
+32-bit boundary. The signature is in its own section so the header can be
+forced to be within the first 8 KiB of the kernel file.
+*/
+.section .multiboot
+.align 4
+.long MAGIC
+.long FLAGS
+.long CHECKSUM
 
 /*
 The multiboot standard does not define the value of the stack pointer register
@@ -82,12 +84,12 @@ _start:
 	stack since (pushed 0 bytes so far), so the alignment has thus been
 	preserved and the call is well defined.
 	*/
-	/*
+	/* 
 		pushes magic address from boot loader
 	 	pushes physical address information from bootloader
 	 */
-	pushl %ebx
-	pushl %eax
+	pushl %ebx        
+	pushl %eax        
 	call kernel_main
 
 	/*
