@@ -26,11 +26,15 @@ SECTIONS
 	/* First put the multiboot header, as it is required to be put very early
 	   in the image or the bootloader won't recognize the file format.
 	   Next we'll put the .text section. */
-	.text BLOCK(4K) : ALIGN(4K)
-	{
-		*(.multiboot)
-		*(.text)
-	}
+        .multiboot2 ALIGN(8) :
+    {
+        KEEP(*(.multiboot2))
+    }
+
+    .text BLOCK(4K) : ALIGN(4K)
+    {
+        *(.text .text.*)
+    }
 
 	/* Read-only data. */
 	.rodata BLOCK(4K) : ALIGN(4K)
@@ -52,7 +56,7 @@ SECTIONS
 	}
 
 	_kernel_end = .;
-	
+
 	 _heap_start = .;
   	. += 16M;      /* reserve 16 MiB for page allocator */
   	_heap_end = .;

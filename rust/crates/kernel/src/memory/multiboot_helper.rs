@@ -24,10 +24,11 @@ impl MemoryManagement for Mem {
     }
 }
 
-static mut MEM: Mem = Mem;
-
 /// mboot_ptr is the initial pointer to the multiboot structure
 /// provided in %ebx on start-up.
-pub fn use_multiboot(mboot_ptr: PAddr) -> Option<Multiboot<'static, 'static>> {
-    unsafe { Multiboot::from_ptr(mboot_ptr, &mut MEM) }
+pub fn use_multiboot<'a>(
+    mboot_ptr: PAddr,
+    mem: &'a mut impl MemoryManagement,
+) -> Option<Multiboot<'a, 'a>> {
+    unsafe { Multiboot::from_ptr(mboot_ptr, mem) }
 }
