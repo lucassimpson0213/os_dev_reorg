@@ -20,7 +20,7 @@ fn oom(_: Layout) -> ! {
     panic!("out of memory");
 }
 
-extern "C" {
+unsafe extern "C" {
     static _heap_start: u8;
     static _heap_end: u8;
 }
@@ -57,7 +57,7 @@ pub extern "C" fn rust_idt_entry() -> u32 {
     0
 }
 
-#[safe(no_mangle)]
+#[unsafe(no_mangle)]
 pub extern "C" fn rust_ping() -> u32 {
     0xC0FFEEu32
 }
