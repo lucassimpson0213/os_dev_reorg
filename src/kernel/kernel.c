@@ -193,8 +193,6 @@ void traverse_multiboot_mmap(uint32_t mbi_phys, struct MemoryRegion regions[]) {
 
 void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
-  extern unsigned int rust_parse_multiboot_map(uint32_t magic,
-                                               uint32_t mbi_phys);
   extern unsigned int rust_ping(void);
   int sum = sum3(1, 2, 3);
 
