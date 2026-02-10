@@ -30,7 +30,7 @@ SECTIONS
     .text : {
   /* link the multiboot struct here */
   . = ALIGN(8);
-  KEEP(*(.multiboot))
+  KEEP(*(.multiboot2))
 
   /* place all of your code afterwards */
   *(.text)
