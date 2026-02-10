@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![feature(alloc_error_handler)]
 pub mod drivers;
 pub mod idt;
 pub mod memory;
@@ -10,6 +11,18 @@ use uart_16550::SerialPort;
 use core::{ffi::c_void, panic::PanicInfo};
 
 use crate::memory::memory_parsing;
+
+extern crate alloc;
+
+use linked_list_allocator::LockedHeap;
+
+#[global_allocator]
+static HEAP: LockedHeap = LockedHeap::empty();
+
+#[alloc_error_handler]
+fn oom(_: core::alloc::Layout) -> ! {
+    panic!("out of memory");
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_hello() -> u32 {
