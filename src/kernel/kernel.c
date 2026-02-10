@@ -220,5 +220,5 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   // rust_parse_multiboot_map(0, 0);
 
-  rust_parse_multiboot_map(magic, mbi_phys);
+  //  rust_parse_multiboot_map(magic, mbi_phys);
 }
