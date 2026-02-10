@@ -42,22 +42,22 @@ pub fn init_heap() {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn init_heap_rust() {
     init_heap();
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn rust_hello() -> u32 {
     0xCAFEBABE
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn rust_idt_entry() -> u32 {
     0
 }
 
-#[no_mangle]
+#[safe(no_mangle)]
 pub extern "C" fn rust_ping() -> u32 {
     0xC0FFEEu32
 }
