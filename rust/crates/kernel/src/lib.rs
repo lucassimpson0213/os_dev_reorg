@@ -47,7 +47,13 @@ pub extern "C" fn init_heap_rust() {
     init_heap();
     use alloc::vec::Vec;
 
-    let v = Vec::<u8>::new();
+    let mut v = Vec::<u8>::new();
+    v.push(1);
+    let val = v.pop();
+    if val.unwrap() == 1 {
+        crate::printing::serial_write_string("\nyessir value is 1\n");
+    }
+    crate::printing::serial_write_string("\nyessir we allocated\n");
 }
 
 #[unsafe(no_mangle)]
@@ -63,6 +69,33 @@ pub extern "C" fn rust_idt_entry() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_ping() -> u32 {
     0xC0FFEEu32
+}
+mod printing {
+    use uart_16550::SerialPort;
+
+    pub fn serial_write_byte(b: u8) {
+        let mut serial = unsafe { SerialPort::new(0x3F8) };
+        serial.init();
+        unsafe {
+            serial.send(b);
+        }
+    }
+
+    pub fn serial_write_string(s: &str) {
+        let mut serial = unsafe { SerialPort::new(0x3F8) };
+        serial.init();
+
+        for b in s.bytes() {
+            unsafe {
+                serial.send(b);
+            }
+        }
+    }
+
+    pub fn serial_newline() {
+        serial_write_byte(b'\r');
+        serial_write_byte(b'\n');
+    }
 }
 
 #[cfg(not(test))]
