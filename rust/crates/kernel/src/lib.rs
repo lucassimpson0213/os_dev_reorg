@@ -4,12 +4,15 @@
 
 extern crate alloc;
 
+pub mod datastructures;
 pub mod drivers;
 pub mod idt;
 pub mod memory;
+pub mod printing;
 pub mod qemu;
 
 use core::{alloc::Layout, panic::PanicInfo};
+use datastructures::linkedlist;
 use linked_list_allocator::LockedHeap;
 
 #[global_allocator]
@@ -45,15 +48,7 @@ pub fn init_heap() {
 #[unsafe(no_mangle)]
 pub extern "C" fn init_heap_rust() {
     init_heap();
-    use alloc::vec::Vec;
-
-    let mut v = Vec::<u8>::new();
-    v.push(1);
-    let val = v.pop();
-    if val.unwrap() == 1 {
-        crate::printing::serial_write_string("\nyessir value is 1\n");
-    }
-    crate::printing::serial_write_string("\nyessir we allocated\n");
+    kprint!("{}", 3);
 }
 
 #[unsafe(no_mangle)]
