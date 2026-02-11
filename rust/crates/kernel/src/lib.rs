@@ -45,6 +45,9 @@ pub fn init_heap() {
 #[unsafe(no_mangle)]
 pub extern "C" fn init_heap_rust() {
     init_heap();
+    use alloc::vec::Vec;
+
+    let v = Vec::<u8>::new();
 }
 
 #[unsafe(no_mangle)]
