@@ -13,8 +13,10 @@ pub mod qemu;
 pub use printing::print::_kprint;
 
 use core::{alloc::Layout, panic::PanicInfo};
-use datastructures::linkedlist;
+
 use linked_list_allocator::LockedHeap;
+
+use crate::datastructures::linkedlist::declare_linked_list;
 
 #[global_allocator]
 static HEAP: LockedHeap = LockedHeap::empty();
@@ -50,6 +52,7 @@ pub fn init_heap() {
 pub extern "C" fn init_heap_rust() {
     init_heap();
     kprint!("{}", 3);
+    declare_linked_list();
 }
 
 #[unsafe(no_mangle)]
