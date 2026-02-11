@@ -1,4 +1,4 @@
-pub use crate::printing::print::_kprint;
+use crate::kprint;
 use alloc::boxed::Box;
 
 #[derive(Debug)]
