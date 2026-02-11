@@ -10,6 +10,7 @@ pub mod idt;
 pub mod memory;
 pub mod printing;
 pub mod qemu;
+pub use printing::print::_kprint;
 
 use core::{alloc::Layout, panic::PanicInfo};
 use datastructures::linkedlist;
@@ -64,33 +65,6 @@ pub extern "C" fn rust_idt_entry() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rust_ping() -> u32 {
     0xC0FFEEu32
-}
-mod printing {
-    use uart_16550::SerialPort;
-
-    pub fn serial_write_byte(b: u8) {
-        let mut serial = unsafe { SerialPort::new(0x3F8) };
-        serial.init();
-        unsafe {
-            serial.send(b);
-        }
-    }
-
-    pub fn serial_write_string(s: &str) {
-        let mut serial = unsafe { SerialPort::new(0x3F8) };
-        serial.init();
-
-        for b in s.bytes() {
-            unsafe {
-                serial.send(b);
-            }
-        }
-    }
-
-    pub fn serial_newline() {
-        serial_write_byte(b'\r');
-        serial_write_byte(b'\n');
-    }
 }
 
 #[cfg(not(test))]

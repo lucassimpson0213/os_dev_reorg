@@ -33,7 +33,7 @@ impl core::fmt::Write for KernelWriter {
         Ok(())
     }
 }
-fn _kprint(args: core::fmt::Arguments) {
+pub fn _kprint(args: core::fmt::Arguments) {
     KernelWriter.write_fmt(args).unwrap();
 }
 
