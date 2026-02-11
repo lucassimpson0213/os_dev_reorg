@@ -194,6 +194,7 @@ void traverse_multiboot_mmap(uint32_t mbi_phys, struct MemoryRegion regions[]) {
 void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   extern unsigned int rust_ping(void);
+  extern void init_heap_rust(void);
   int sum = sum3(1, 2, 3);
 
   size_t result = serial_init();
