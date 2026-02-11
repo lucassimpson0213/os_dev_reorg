@@ -217,6 +217,7 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   rust_idt_entry();
   init_paging();
+  init_heap_rust();
 
   // rust_parse_multiboot_map(0, 0);
 
