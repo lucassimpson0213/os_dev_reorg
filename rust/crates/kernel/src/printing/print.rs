@@ -37,9 +37,4 @@ pub fn _kprint(args: core::fmt::Arguments) {
     KernelWriter.write_fmt(args).unwrap();
 }
 
-#[macro_export]
-macro_rules! kprint {
-    ($($arg:tt)*) => ($crate::_kprint(format_args!($($arg)*)));
-}
-
 // 4. Implement the print function
