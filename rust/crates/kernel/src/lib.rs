@@ -75,3 +75,8 @@ pub extern "C" fn rust_ping() -> u32 {
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
+
+#[macro_export]
+macro_rules! kprint {
+    ($($arg:tt)*) => ($crate::_kprint(format_args!($($arg)*)));
+}
