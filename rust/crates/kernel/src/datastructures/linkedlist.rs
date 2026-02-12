@@ -20,11 +20,17 @@ impl List {
     pub fn new() -> Self {
         List { head: Link::Empty }
     }
-    pub fn push(self, elem: i32) {
-        let new_node = Node {
+    pub fn push(&mut self, elem: i32) {
+        let new_node = Box::new(Node {
             elem: elem,
-            next: self.head,
-        };
+            next: core::mem::replace(&mut self.head, Link::Empty),
+        });
+
+        self.head = Link::More(new_node);
+    }
+    pub fn pop(&mut self) -> Option<i32> {
+        // TODO
+        return 0;
     }
 }
 
@@ -35,7 +41,7 @@ impl List {
 *   which is also a Link reference
 */
 pub fn declare_linked_list() {
-    let list = List::new();
+    let mut list = List::new();
     list.push(3);
     kprint!("{:?}", list);
 }
