@@ -20,16 +20,14 @@ A 32-bit x86 kernel that boots via **GRUB (Multiboot v1)**. The kernel is linked
 - **String/utility** helpers.
 - **Multiboot v1** parsing: flags, command line, and **memory map** (usable RAM regions).
 ## Purpose 
-Here’s a concise addition you can paste at the end — it gives Colonel a purpose without changing the tone of your doc.
 
-⸻
 
 Intended use (important)
 
 This kernel is not a daily-driver OS yet.
 It is being developed as a systems laboratory — a controlled environment to observe behavior that modern OSes hide.
 
-Colonel is meant to be booted frequently inside QEMU/VMs as a diagnostic and learning tool. Over time it will provide:
+The Kernel  is meant to be booted frequently inside QEMU/VMs as a diagnostic and learning tool. Over time it will provide:
 	•	inspection of physical memory maps and paging state
 	•	visualization of allocations and fragmentation
 	•	interrupt and timer observation
