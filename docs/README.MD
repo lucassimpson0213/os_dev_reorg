@@ -19,7 +19,23 @@ A 32-bit x86 kernel that boots via **GRUB (Multiboot v1)**. The kernel is linked
 - **Serial output** (COM1, `0x3F8`) and `printk`.
 - **String/utility** helpers.
 - **Multiboot v1** parsing: flags, command line, and **memory map** (usable RAM regions).
+## Purpose 
+Here’s a concise addition you can paste at the end — it gives Colonel a purpose without changing the tone of your doc.
 
+⸻
+
+Intended use (important)
+
+This kernel is not a daily-driver OS yet.
+It is being developed as a systems laboratory — a controlled environment to observe behavior that modern OSes hide.
+
+Colonel is meant to be booted frequently inside QEMU/VMs as a diagnostic and learning tool. Over time it will provide:
+	•	inspection of physical memory maps and paging state
+	•	visualization of allocations and fragmentation
+	•	interrupt and timer observation
+	•	process scheduling experiments
+
+The goal is not to replace Linux, but to act as a hardware and OS behavior microscope that complements higher-level work (e.g., VM orchestration and distributed systems experiments).
 ## Build & Run
 - Toolchain: `i686-elf-gcc`, `i686-elf-ld`, `nasm` (if you use Intel-syntax ASM).
 - Build: `make`
