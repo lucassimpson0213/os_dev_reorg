@@ -198,7 +198,7 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
   int sum = sum3(1, 2, 3);
 
   size_t result = serial_init();
-
+  printk("KERNEL_BOOK_OK");
   struct MemoryRegion regions[MAX_REGIONS];
 
   test_pmm();
