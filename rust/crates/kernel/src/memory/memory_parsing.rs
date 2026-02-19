@@ -313,7 +313,6 @@ pub fn rust_parse_multiboot_mapper(magic: u32, mbi_phys: u32) -> u32 {
     match magic {
         MB1_BOOTLOADER_MAGIC => {
             printings::serial_write_string("kernel is using multiboot 1");
-            let multiboot_info = multiboot1_data::MultibootInfo;
 
             // crate::memory::multiboot_helper::use_multiboot(mboot_ptr, mem)
         }

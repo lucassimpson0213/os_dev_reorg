@@ -30,7 +30,7 @@ impl List {
     }
     pub fn pop(&mut self) -> Option<i32> {
         // TODO
-        return 0;
+        return Some(0);
     }
 }
 
