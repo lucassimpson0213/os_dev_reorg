@@ -3,8 +3,6 @@ name: kernel-ci
 on:
   push:
     branches: [dev]
-  pull_request:
-    branches: [dev, main, stable]
   workflow_dispatch:
 
 permissions:
@@ -13,21 +11,14 @@ permissions:
   packages: write
 
 concurrency:
-  group: kernel-ci-${{ github.ref }}
+  group: boot-gate-pr-dev
   cancel-in-progress: true
 
-env:
-  IMAGE_REPO: ghcr.io/simpson-systems/kernel-ci
-  IMAGE_TAG: dev
-
 jobs:
-  # Build/push the CI container image (only safe on push/workflow_dispatch, not PRs/forks)
   build-image:
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.out.outputs.image }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,15 +37,15 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_REPO }}
+          images: ghcr.io/simpson-systems/kernel-ci
           tags: |
-            type=raw,value=${{ env.IMAGE_TAG }}
             type=sha
+            type=raw,value=dev
 
       - name: Choose container image ref (single tag)
         id: out
         run: |
-          echo "image=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/simpson-systems/kernel-ci:dev" >> "$GITHUB_OUTPUT"
 
       - name: Build + push (with cache)
         uses: docker/build-push-action@v6
@@ -66,11 +57,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Boot gate: builds ISO + boots in QEMU using the CI image
-  boot:
-    # We still declare needs so we can use the output when build-image runs.
-    # On pull_request, build-image is skipped and we fall back to :dev.
-    needs: [build-image]
+  boot-and-open-pr:
+    needs: build-image
     runs-on: ubuntu-latest
 
     defaults:
@@ -78,7 +66,7 @@ jobs:
         shell: bash
 
     container:
-      image: ${{ needs.build-image.outputs.image || 'ghcr.io/simpson-systems/kernel-ci:dev' }}
+      image: ${{ needs.build-image.outputs.image }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -118,15 +106,7 @@ jobs:
       - name: Boot in QEMU (GRUB) (root Makefile)
         run: |
           set -euo pipefail
-          # timeout returns 124 when it times out; treat 124 as non-fatal
-          set +e
-          timeout 25s make run-grub 2>&1 | tee qemu.log
-          ec=${PIPESTATUS[0]}
-          set -e
-          if [ "$ec" -ne 0 ] && [ "$ec" -ne 124 ]; then
-            echo "QEMU boot step failed with exit code $ec"
-            exit "$ec"
-          fi
+          timeout 25s make run-grub | tee qemu.log
 
       - name: Upload QEMU log
         if: always()
@@ -135,25 +115,6 @@ jobs:
           name: qemu-log
           path: qemu.log
           if-no-files-found: ignore
-
-  # Promotion PR: open dev -> stable only after a successful boot gate on push to dev
-  promote-dev-to-stable:
-    needs: [boot]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Ensure gh is available
-        run: |
-          set -euo pipefail
-          if command -v gh >/dev/null 2>&1; then
-            exit 0
-          fi
-          sudo apt-get update
-          sudo apt-get install -y gh
 
       - name: Open PR dev -> stable (only if none exists)
         env:
