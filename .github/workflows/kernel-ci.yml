@@ -61,7 +61,6 @@ jobs:
     needs: build-image
     runs-on: ubuntu-latest
 
-    # IMPORTANT: run bash by default so pipefail works
     defaults:
       run:
         shell: bash
@@ -76,7 +75,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install a toolchain explicitly BEFORE rust-cache (rust-cache runs `rustc -vV`)
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -86,16 +84,14 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            rust/crates/kernel -> rust/target
+            rust -> rust/target
 
-      - name: Build ISO
-        working-directory: rust/crates/kernel
+      - name: Build ISO (root Makefile)
         run: |
           set -euo pipefail
           make iso
 
-      - name: Boot in QEMU (GRUB)
-        working-directory: rust/crates/kernel
+      - name: Boot in QEMU (GRUB) (root Makefile)
         run: |
           set -euo pipefail
           timeout 25s make run-grub | tee qemu.log
