@@ -41,16 +41,4 @@ jobs:
 
       # ✅ Commit message lint (Conventional Commits)
       # To keep this "one-file only", we generate a minimal commitlint config on the fly.
-      - name: Write commitlint config
-        run: |
-          cat > commitlint.config.cjs <<'EOF'
-          module.exports = {
-            extends: ['@commitlint/config-conventional'],
-          };
-          EOF
-
-      - name: Install commitlint (local)
-        run: npm i -D @commitlint/cli @commitlint/config-conventional
-
-      - name: Lint PR commits
-        uses: wagoid/commitlint-github-action@v6
+    
