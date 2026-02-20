@@ -92,7 +92,7 @@ jobs:
         working-directory: rust/crates/kernel
         run: |
           set -euo pipefail
-          make run-grub
+          make iso
 
       - name: Boot in QEMU (GRUB)
         working-directory: rust/crates/kernel
