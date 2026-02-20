@@ -111,7 +111,7 @@ $(BUILD_DIR):
 # Rust build
 # =========================
 $(RUST_LIB):
-	cd $(RUST_DIR) && cargo build --target i686-os.json
+	cd $(RUST_DIR) && cargo +nightly build -Zjson-target-spec --target i686-os.json
 
 # =========================
 # Compile rules
