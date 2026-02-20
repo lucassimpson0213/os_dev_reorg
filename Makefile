@@ -1,7 +1,7 @@
 # =========================
 # Toolchain
 # =========================
-CC      ?= i686-elf-gcc
+CC      := i686-linux-gnu-gcc
 QEMU    := qemu-system-i386
 GDB     := gdb
 ISO_DIR     := iso
