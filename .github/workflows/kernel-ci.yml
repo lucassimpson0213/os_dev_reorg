@@ -75,14 +75,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Your build is using nightly + build-std, so rust-src MUST be installed.
+      - name: Mark workspace safe for git (container ownership fix)
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Install Rust toolchain (nightly + rust-src)
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: rust-src
 
-      # If your kernel build uses a custom target JSON or i686-none, uncomment/add as needed.
-      # This is harmless if already installed; rustup will no-op.
       - name: Add Rust targets (if needed)
         run: |
           set -euo pipefail
