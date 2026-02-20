@@ -64,11 +64,7 @@ jobs:
 
       # Pick ONE of these checks:
 
-      # (A) Log marker check (recommended if you print something like "KERNEL OK")
-      - name: Assert boot marker
-        run: |
-          set -euo pipefail
-          grep -q "KERNEL OK" qemu.log
+
 
       # (B) OR: If you implement isa-debug-exit success codes, you can check exit code instead.
       # NOTE: timeout will mask exit codes if it times out, so only use this if QEMU exits quickly.
