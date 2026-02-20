@@ -190,16 +190,16 @@ void traverse_multiboot_mmap(uint32_t mbi_phys, struct MemoryRegion regions[]) {
     printk("entry pointer: %p\n", mmap);
   }
 }
-static inline void outw(uint16_t port, uint16_t value) {
-    __asm__ volatile ("outw %0, %1" : : "a"(value), "Nd"(port));
+
+
+
+
+static inline void outw(uint16_t port, uint16_t val) {
+  __asm__ volatile("outw %0, %1" : : "a"(val), "Nd"(port));
 }
 
 void qemu_success() {
     outw(0xF4, 0x10);
-}
-
-static inline void outw(uint16_t port, uint16_t val) {
-  __asm__ volatile("outw %0, %1" : : "a"(val), "Nd"(port));
 }
 
 void qemu_poweroff(void) {
