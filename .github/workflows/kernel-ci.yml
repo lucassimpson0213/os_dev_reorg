@@ -31,6 +31,10 @@ jobs:
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+        env:
+          CARGO_HOME: ~/.cargo
 
       - name: Install deps (toolchain + grub + qemu)
         run: |
