@@ -1,4 +1,4 @@
-name: kernel-ci
+nname: kernel-ci
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/simpson-systems/kernel-ci
+          images: ghcr.io/${{ github.repository_owner }}/kernel-ci
           tags: |
             type=sha
             type=raw,value=dev
@@ -45,7 +45,7 @@ jobs:
       - name: Choose container image ref (single tag)
         id: out
         run: |
-          echo "image=ghcr.io/simpson-systems/kernel-ci:dev" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${{ github.repository_owner }}/kernel-ci:dev" >> "$GITHUB_OUTPUT"
 
       - name: Build + push (with cache)
         uses: docker/build-push-action@v6
@@ -60,11 +60,6 @@ jobs:
   boot-and-open-pr:
     needs: build-image
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
-
     container:
       image: ${{ needs.build-image.outputs.image }}
       credentials:
@@ -75,46 +70,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Mark workspace safe for git (container ownership fix)
-        run: |
-          set -euo pipefail
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Install Rust toolchain (nightly + rust-src)
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rust-src
-
-      - name: Add Rust targets (if needed)
-        run: |
-          set -euo pipefail
-          rustup target add i686-unknown-linux-gnu || true
-          rustup target add i686-unknown-none || true
-          rustup target add x86_64-unknown-none || true
-
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            rust -> rust/target
+            rust/crates/kernel -> rust/target
 
-      - name: Build ISO (root Makefile)
+      - name: Build ISO
+        working-directory: rust/crates/kernel
         run: |
           set -euo pipefail
-          make iso
+          make run-grub
 
-      - name: Boot in QEMU (GRUB) (root Makefile)
+      - name: Boot in QEMU (GRUB)
+        working-directory: rust/crates/kernel
         run: |
           set -euo pipefail
           timeout 25s make run-grub | tee qemu.log
-
-      - name: Upload QEMU log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: qemu-log
-          path: qemu.log
-          if-no-files-found: ignore
 
       - name: Open PR dev -> stable (only if none exists)
         env:
