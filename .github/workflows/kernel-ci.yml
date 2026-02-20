@@ -3,59 +3,95 @@ name: kernel-ci
 on:
   push:
     branches: [dev]
-  pull_request:
-    branches: [stable]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: boot-gate-pr-dev
+  cancel-in-progress: true
 
 jobs:
-  boot:
+  boot-and-open-pr:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ------------------------------------------------
-      # Base build + boot dependencies
-      # ------------------------------------------------
-      - name: Install build + boot deps
+      # Rust for your staticlib (rust/target/i686-os/...)
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: rust-src
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install deps (toolchain + grub + qemu)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
-            gcc-i686-linux-gnu \
             nasm \
             xorriso \
             mtools \
             qemu-system-x86 \
+            grub-pc-bin \
             grub-common \
-            grub-pc-bin
+            gcc-i686-linux-gnu \
+            binutils-i686-linux-gnu
 
-      # ------------------------------------------------
-      # Tell the Makefile to use the CI compiler
-      # (this overrides CC ?= i686-elf-gcc)
-      # ------------------------------------------------
-      - name: Configure compiler for CI
-        run: echo "CC=i686-linux-gnu-gcc" >> $GITHUB_ENV
+          # Your Makefile calls grub2-mkrescue; Ubuntu often provides grub-mkrescue.
+          # This makes both names work.
+          if ! command -v grub2-mkrescue >/dev/null 2>&1 && command -v grub-mkrescue >/dev/null 2>&1; then
+            sudo ln -s "$(command -v grub-mkrescue)" /usr/local/bin/grub2-mkrescue
+          fi
 
-      # ------------------------------------------------
-      # Build the kernel and ISO
-      # ------------------------------------------------
-      - name: Build kernel + ISO
+      - name: Build ISO
         run: |
           set -euo pipefail
-          make clean
-          make iso
+          make CC=i686-linux-gnu-gcc iso
 
-      # ------------------------------------------------
-      # Boot test via GRUB inside QEMU
-      # ------------------------------------------------
-      - name: GRUB boot smoke test (must print marker)
+      - name: Boot in QEMU (GRUB)
         run: |
           set -euo pipefail
-          timeout 30s make run-grub > bootlog.txt 2>&1 || true
+          timeout 25s make run-grub | tee qemu.log
 
-          echo "----- bootlog.txt (last 200 lines) -----"
-          tail -n 200 bootlog.txt
+      # Pick ONE of these checks:
 
-          # This string MUST exist in your early kernel output
-          grep -n "KERNEL_BOOT_OK" bootlog.txt
+      # (A) Log marker check (recommended if you print something like "KERNEL OK")
+      - name: Assert boot marker
+        run: |
+          set -euo pipefail
+          grep -q "KERNEL OK" qemu.log
+
+      # (B) OR: If you implement isa-debug-exit success codes, you can check exit code instead.
+      # NOTE: timeout will mask exit codes if it times out, so only use this if QEMU exits quickly.
+      # - name: Assert QEMU exit code (debug-exit)
+      #   run: |
+      #     set -euo pipefail
+      #     make run-grub
+
+      - name: Open PR dev -> stable (only if none exists)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          BASE="stable"
+          HEAD="dev"
+          TITLE="Merge dev -> stable (boot verified)"
+          BODY=$'Auto PR: CI successfully booted the kernel via GRUB + QEMU.\n\n- Trigger: push to dev\n- Build: make iso\n- Boot: make run-grub\n\nIf a PR already exists for dev->stable, this workflow won’t create another.'
+
+          existing="$(gh pr list --base "$BASE" --head "$HEAD" --state open --json number --jq 'length')"
+          if [ "$existing" -gt 0 ]; then
+            echo "PR already exists for $HEAD -> $BASE. Skipping."
+            exit 0
+          fi
+
+          gh pr create --base "$BASE" --head "$HEAD" --title "$TITLE" --body "$BODY"
