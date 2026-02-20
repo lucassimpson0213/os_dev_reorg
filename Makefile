@@ -86,7 +86,16 @@ iso: iso_root
 	grub2-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
 
 run-grub: iso
-	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -device isa-debug-exit,iobase=0xf4,iosize=0x04 -serial stdio -no-reboot -display none
+	@set -e; \
+	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M \
+	  -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+	  -serial stdio -no-reboot -display none; \
+	ec=$$?; \
+	if [ $$ec -eq 33 ]; then \
+	  echo "QEMU: debug-exit success (33)"; \
+	  exit 0; \
+	fi; \
+	exit $$ec
 
 debug-grub: iso
 	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -serial file:serial.log -s -S
