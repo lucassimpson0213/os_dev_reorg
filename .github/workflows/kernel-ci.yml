@@ -3,52 +3,134 @@ name: kernel-ci
 on:
   push:
     branches: [dev]
-  pull_request:
-    branches: [stable]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+concurrency:
+  group: boot-gate-pr-dev
+  cancel-in-progress: true
 
 jobs:
-  boot:
+  build-image:
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.out.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/simpson-systems/kernel-ci
+          tags: |
+            type=sha
+            type=raw,value=dev
+
+      - name: Choose container image ref (single tag)
+        id: out
+        run: |
+          echo "image=ghcr.io/simpson-systems/kernel-ci:dev" >> "$GITHUB_OUTPUT"
+
+      - name: Build + push (with cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .github/docker/kernel-ci.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  boot-and-open-pr:
+    needs: build-image
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    container:
+      image: ${{ needs.build-image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build + boot deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            nasm \
-            xorriso \
-            mtools \
-            qemu-system-x86 \
-            grub-common \
-            grub-pc-bin
-
-      # Your Makefile uses i686-elf-gcc, which is NOT available by default on ubuntu-latest.
-      # This installs a prebuilt cross compiler toolchain.
-      - name: Install i686-elf cross toolchain
+      - name: Mark workspace safe for git (container ownership fix)
         run: |
           set -euo pipefail
-          mkdir -p $HOME/opt
-          curl -L -o toolchain.tar.xz https://github.com/lordmilko/i686-elf-tools/releases/latest/download/i686-elf-tools-linux.tar.xz
-          tar -xJf toolchain.tar.xz -C $HOME/opt
-          echo "$HOME/opt/i686-elf-tools/bin" >> $GITHUB_PATH
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Build kernel + ISO
+      - name: Install Rust toolchain (nightly + rust-src)
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      - name: Add Rust targets (if needed)
         run: |
           set -euo pipefail
-          make clean
+          rustup target add i686-unknown-linux-gnu || true
+          rustup target add i686-unknown-none || true
+          rustup target add x86_64-unknown-none || true
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            rust -> rust/target
+
+      - name: Build ISO (root Makefile)
+        run: |
+          set -euo pipefail
           make iso
 
-      - name: GRUB boot smoke test (must print marker)
+      - name: Boot in QEMU (GRUB) (root Makefile)
         run: |
           set -euo pipefail
-          # run-grub already uses -serial stdio, so we can capture it
-          timeout 30s make run-grub > bootlog.txt 2>&1 || true
-          echo "----- bootlog.txt (last 200 lines) -----"
-          tail -n 200 bootlog.txt
+          timeout 25s make run-grub | tee qemu.log
 
-          # Change this to whatever your kernel prints early
-          grep -n "KERNEL_BOOT_OK" bootlog.txt
+      - name: Upload QEMU log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-log
+          path: qemu.log
+          if-no-files-found: ignore
+
+      - name: Open PR dev -> stable (only if none exists)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          BASE="stable"
+          HEAD="dev"
+          TITLE="Merge dev -> stable (boot verified)"
+          BODY=$'Auto PR: CI successfully booted the kernel via GRUB + QEMU.\n\n- Trigger: push to dev\n- Build: make iso\n- Boot: make run-grub\n\nIf a PR already exists for dev->stable, this workflow won’t create another.'
+
+          existing="$(gh pr list --base "$BASE" --head "$HEAD" --state open --json number --jq 'length')"
+          if [ "$existing" -gt 0 ]; then
+            echo "PR already exists for $HEAD -> $BASE. Skipping."
+            exit 0
+          fi
+
+          gh pr create --base "$BASE" --head "$HEAD" --title "$TITLE" --body "$BODY"
