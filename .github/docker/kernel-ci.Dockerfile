@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     jq \
+    gnupg \
+    coreutils \
     build-essential \
     nasm \
     xorriso \
@@ -20,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # ---- GitHub CLI (gh) ----
-RUN type -p curl >/dev/null \
+RUN command -v curl >/dev/null 2>&1 \
   && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
      | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
   && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -31,14 +33,13 @@ RUN type -p curl >/dev/null \
   && rm -rf /var/lib/apt/lists/*
 
 # ---- Rust nightly + rust-src ----
-# Pin nightly for reproducible builds; bump this when you want.
 ARG RUST_NIGHTLY=nightly-2026-02-01
 RUN curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain ${RUST_NIGHTLY} \
   && /root/.cargo/bin/rustup component add rust-src --toolchain ${RUST_NIGHTLY}
 
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# ---- grub2-mkrescue shim (Ubuntu often has grub-mkrescue) ----
+# ---- grub2-mkrescue shim ----
 RUN if ! command -v grub2-mkrescue >/dev/null 2>&1 && command -v grub-mkrescue >/dev/null 2>&1; then \
       ln -s "$(command -v grub-mkrescue)" /usr/local/bin/grub2-mkrescue; \
     fi
