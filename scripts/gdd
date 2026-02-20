@@ -1,0 +1,52 @@
+#!/usr/bin/env bash set -euo pipefail # gdd: Git-Driven Development helper # Requires: gh (GitHub CLI) authenticated; git. # Optional: jq 
+(for nicer parsing), but not required. die() { echo "gdd: $*" >&2; exit 1; } need_cmd() { command -v "$1" >/dev/null 2>&1 || die "missing 
+required command: $1"; } need_cmd git need_cmd gh # Must be inside a git repo git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die 
+"not inside a git repo" REPO_ROOT="$(git rev-parse --show-toplevel)" cd "$REPO_ROOT" DEFAULT_BASE_BRANCH="dev" # Try to infer base branch if 
+dev doesn't exist if ! git show-ref --verify --quiet "refs/heads/$DEFAULT_BASE_BRANCH" && ! git ls-remote --exit-code --heads origin 
+"$DEFAULT_BASE_BRANCH" >/dev/null 2>&1; then
+  DEFAULT_BASE_BRANCH="main" fi echo "" echo "gdd — Git-Driven Development" echo "----------------------------" echo "" echo "Select type:" 
+echo "1) feat" echo "2) fix" echo "3) refactor" echo "4) build" echo "5) ci" echo "6) docs" echo "7) chore" echo "8) perf" echo "9) test" 
+echo "" read -r -p "Choice [1-9]: " choice || true case "${choice:-}" in
+  1) TYPE="feat" ;; 2) TYPE="fix" ;; 3) TYPE="refactor" ;; 4) TYPE="build" ;; 5) TYPE="ci" ;; 6) TYPE="docs" ;; 7) TYPE="chore" ;; 8) 
+  TYPE="perf" ;; 9) TYPE="test" ;; *) TYPE="chore" ;;
+esac echo "" read -r -p "Base branch [${DEFAULT_BASE_BRANCH}]: " BASE_BRANCH || true BASE_BRANCH="${BASE_BRANCH:-$DEFAULT_BASE_BRANCH}" echo 
+"" read -r -p "Existing issue number (blank to create new): " ISSUE_NUM || true echo "" read -r -p "Title (issue/PR title): " TITLE || true 
+[[ -n "${TITLE// }" ]] || die "title is required" # Basic slugify: lowercase, spaces->-, drop non-alnum/- slugify() {
+  echo "$1" \
+    | tr '[:upper:]' '[:lower:]' \ | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g' } # Create or validate issue if [[ -z 
+"${ISSUE_NUM:-}" ]]; then
+  echo "" echo "Creating issue..." # gh issue create prints URL; we also want number. Use json. ISSUE_JSON="$(gh issue create --title 
+  "$TITLE" --body "" --json number,url 2>/dev/null || true)" if [[ -z "$ISSUE_JSON" ]]; then
+    # Fallback if gh older doesn't support --json on issue create: ISSUE_URL="$(gh issue create --title "$TITLE" --body "" --web=false 
+    2>/dev/null || true)" [[ -n "$ISSUE_URL" ]] || die "failed to create issue (check gh auth + repo permissions)" ISSUE_NUM="$(basename 
+    "$ISSUE_URL")" ISSUE_URL_OUT="$ISSUE_URL"
+  else
+    ISSUE_NUM="$(printf '%s' "$ISSUE_JSON" | sed -nE 's/.*"number":[ ]*([0-9]+).*/\1/p')" ISSUE_URL_OUT="$(printf '%s' "$ISSUE_JSON" | sed 
+    -nE 's/.*"url":[ ]*"([^"]+)".*/\1/p')"
+  fi else # Validate issue exists gh issue view "$ISSUE_NUM" >/dev/null 2>&1 || die "issue #$ISSUE_NUM not found" ISSUE_URL_OUT="$(gh issue 
+  view "$ISSUE_NUM" --json url -q .url 2>/dev/null || true)"
+fi [[ -n "${ISSUE_NUM:-}" ]] || die "could not determine issue number" BRANCH="${TYPE}/${ISSUE_NUM}-$(slugify "$TITLE")" echo "" echo 
+"Branch will be: $BRANCH" echo "" # Create branch off base branch echo "Fetching base branch ($BASE_BRANCH)..." git fetch origin 
+"$BASE_BRANCH" >/dev/null 2>&1 || true echo "Checking out base branch locally..." if git show-ref --verify --quiet 
+"refs/heads/$BASE_BRANCH"; then
+  git checkout "$BASE_BRANCH" >/dev/null else git checkout -b "$BASE_BRANCH" "origin/$BASE_BRANCH" >/dev/null fi echo "Pulling latest..." 
+git pull --ff-only origin "$BASE_BRANCH" >/dev/null 2>&1 || true # Create feature branch if git show-ref --verify --quiet 
+"refs/heads/$BRANCH"; then
+  echo "Branch already exists locally; checking out..." git checkout "$BRANCH" >/dev/null else echo "Creating branch..." git checkout -b 
+  "$BRANCH" >/dev/null
+fi # Push branch echo "Pushing branch to origin..." git push -u origin "$BRANCH" >/dev/null # Build PR body and title PR_TITLE="${TYPE}: 
+${TITLE}" PR_BODY="Closes #${ISSUE_NUM}" echo "" read -r -p "Open PR now? [Y/n]: " OPEN_PR || true OPEN_PR="${OPEN_PR:-Y}" PR_URL_OUT="" if 
+[[ "$OPEN_PR" =~ ^[Yy]$ ]]; then
+  echo "" echo "Creating pull request..." # If PR already exists, gh will error; handle gracefully. if PR_URL_OUT="$(gh pr create --title 
+  "$PR_TITLE" --body "$PR_BODY" --base "$BASE_BRANCH" --head "$BRANCH" 2>/dev/null)"; then
+    :
+  else
+    # Try to find existing PR for this branch PR_URL_OUT="$(gh pr view --head "$BRANCH" --json url -q .url 2>/dev/null || true)" [[ -n 
+    "$PR_URL_OUT" ]] || die "failed to create PR (and no existing PR found)"
+  fi echo "" read -r -p "Enable auto-merge (squash) when checks pass? [y/N]: " AM || true AM="${AM:-N}" if [[ "$AM" =~ ^[Yy]$ ]]; then
+    echo "Enabling auto-merge (squash)..." gh pr merge --auto --squash "$PR_URL_OUT" >/dev/null || \
+      echo "Note: couldn't enable auto-merge (branch rules/checks may prevent it right now)."
+  fi fi echo "" echo "Done." echo "Issue:  #${ISSUE_NUM} ${ISSUE_URL_OUT:-}" echo "Branch: ${BRANCH}" if [[ -n "$PR_URL_OUT" ]]; then echo 
+  "PR:  ${PR_URL_OUT}"
+fi echo "" echo "Next steps:" echo "  - make changes" echo "  - git add ." echo "  - git commit" echo "  - git push"
+echo ""
