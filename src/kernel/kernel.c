@@ -198,6 +198,15 @@ void qemu_success() {
     outw(0xF4, 0x10);
 }
 
+static inline void outw(uint16_t port, uint16_t val) {
+  __asm__ volatile("outw %0, %1" : : "a"(val), "Nd"(port));
+}
+
+void qemu_poweroff(void) {
+  outw(0x604, 0x2000);
+  for(;;) __asm__ volatile("hlt");
+}
+
 void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   extern unsigned int rust_ping(void);
@@ -227,6 +236,7 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
   init_paging();
   init_heap_rust();
   qemu_success();
+  qemu_poweroff();
 
   // rust_parse_multiboot_map(0, 0);
 
