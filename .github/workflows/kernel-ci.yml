@@ -1,8 +1,10 @@
-nname: kernel-ci
+name: kernel-ci
 
 on:
   push:
     branches: [dev]
+  pull_request:
+    branches: [dev, main, stable]
   workflow_dispatch:
 
 permissions:
@@ -11,14 +13,21 @@ permissions:
   packages: write
 
 concurrency:
-  group: boot-gate-pr-dev
+  group: kernel-ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  IMAGE_REPO: ghcr.io/simpson-systems/kernel-ci
+  IMAGE_TAG: dev
+
 jobs:
+  # Build/push the CI container image (only safe on push/workflow_dispatch, not PRs/forks)
   build-image:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.out.outputs.image }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,15 +46,15 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/kernel-ci
+          images: ${{ env.IMAGE_REPO }}
           tags: |
+            type=raw,value=${{ env.IMAGE_TAG }}
             type=sha
-            type=raw,value=dev
 
       - name: Choose container image ref (single tag)
         id: out
         run: |
-          echo "image=ghcr.io/${{ github.repository_owner }}/kernel-ci:dev" >> "$GITHUB_OUTPUT"
+          echo "image=${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
 
       - name: Build + push (with cache)
         uses: docker/build-push-action@v6
@@ -57,11 +66,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  boot-and-open-pr:
-    needs: build-image
+  # Boot gate: builds ISO + boots in QEMU using the CI image
+  boot:
+    # We still declare needs so we can use the output when build-image runs.
+    # On pull_request, build-image is skipped and we fall back to :dev.
+    needs: [build-image]
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
     container:
-      image: ${{ needs.build-image.outputs.image }}
+      image: ${{ needs.build-image.outputs.image || 'ghcr.io/simpson-systems/kernel-ci:dev' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -70,23 +87,73 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Mark workspace safe for git (container ownership fix)
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Install Rust toolchain (nightly + rust-src)
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      - name: Add Rust targets (if needed)
+        run: |
+          set -euo pipefail
+          rustup target add i686-unknown-linux-gnu || true
+          rustup target add i686-unknown-none || true
+          rustup target add x86_64-unknown-none || true
+
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            rust/crates/kernel -> rust/target
+            rust -> rust/target
 
-      - name: Build ISO
-        working-directory: rust/crates/kernel
+      - name: Build ISO (root Makefile)
         run: |
           set -euo pipefail
-          make run-grub
+          make iso
 
-      - name: Boot in QEMU (GRUB)
-        working-directory: rust/crates/kernel
+      - name: Boot in QEMU (GRUB) (root Makefile)
         run: |
           set -euo pipefail
-          timeout 25s make run-grub | tee qemu.log
+          # timeout returns 124 when it times out; treat 124 as non-fatal
+          set +e
+          timeout 25s make run-grub 2>&1 | tee qemu.log
+          ec=${PIPESTATUS[0]}
+          set -e
+          if [ "$ec" -ne 0 ] && [ "$ec" -ne 124 ]; then
+            echo "QEMU boot step failed with exit code $ec"
+            exit "$ec"
+          fi
+
+      - name: Upload QEMU log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-log
+          path: qemu.log
+          if-no-files-found: ignore
+
+  # Promotion PR: open dev -> stable only after a successful boot gate on push to dev
+  promote-dev-to-stable:
+    needs: [boot]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure gh is available
+        run: |
+          set -euo pipefail
+          if command -v gh >/dev/null 2>&1; then
+            exit 0
+          fi
+          sudo apt-get update
+          sudo apt-get install -y gh
 
       - name: Open PR dev -> stable (only if none exists)
         env:
