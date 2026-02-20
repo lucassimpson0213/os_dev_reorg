@@ -1,0 +1,97 @@
+name: kernel-ci
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: boot-gate-pr-dev
+  cancel-in-progress: true
+
+jobs:
+  boot-and-open-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Rust for your staticlib (rust/target/i686-os/...)
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: rust-src
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install deps (toolchain + grub + qemu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            nasm \
+            xorriso \
+            mtools \
+            qemu-system-x86 \
+            grub-pc-bin \
+            grub-common \
+            gcc-i686-linux-gnu \
+            binutils-i686-linux-gnu
+
+          # Your Makefile calls grub2-mkrescue; Ubuntu often provides grub-mkrescue.
+          # This makes both names work.
+          if ! command -v grub2-mkrescue >/dev/null 2>&1 && command -v grub-mkrescue >/dev/null 2>&1; then
+            sudo ln -s "$(command -v grub-mkrescue)" /usr/local/bin/grub2-mkrescue
+          fi
+
+      - name: Build ISO
+        run: |
+          set -euo pipefail
+          make CC=i686-linux-gnu-gcc iso
+
+      - name: Boot in QEMU (GRUB)
+        run: |
+          set -euo pipefail
+          timeout 25s make run-grub | tee qemu.log
+
+      # Pick ONE of these checks:
+
+      # (A) Log marker check (recommended if you print something like "KERNEL OK")
+      - name: Assert boot marker
+        run: |
+          set -euo pipefail
+          grep -q "KERNEL OK" qemu.log
+
+      # (B) OR: If you implement isa-debug-exit success codes, you can check exit code instead.
+      # NOTE: timeout will mask exit codes if it times out, so only use this if QEMU exits quickly.
+      # - name: Assert QEMU exit code (debug-exit)
+      #   run: |
+      #     set -euo pipefail
+      #     make run-grub
+
+      - name: Open PR dev -> stable (only if none exists)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          BASE="stable"
+          HEAD="dev"
+          TITLE="Merge dev -> stable (boot verified)"
+          BODY=$'Auto PR: CI successfully booted the kernel via GRUB + QEMU.\n\n- Trigger: push to dev\n- Build: make iso\n- Boot: make run-grub\n\nIf a PR already exists for dev->stable, this workflow won’t create another.'
+
+          existing="$(gh pr list --base "$BASE" --head "$HEAD" --state open --json number --jq 'length')"
+          if [ "$existing" -gt 0 ]; then
+            echo "PR already exists for $HEAD -> $BASE. Skipping."
+            exit 0
+          fi
+
+          gh pr create --base "$BASE" --head "$HEAD" --title "$TITLE" --body "$BODY"

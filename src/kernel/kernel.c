@@ -193,24 +193,22 @@ void traverse_multiboot_mmap(uint32_t mbi_phys, struct MemoryRegion regions[]) {
 
 void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
-  extern unsigned int rust_parse_multiboot_map(uint32_t magic,
-                                               uint32_t mbi_phys);
   extern unsigned int rust_ping(void);
+  extern void init_heap_rust(void);
   int sum = sum3(1, 2, 3);
-  printk("got here1");
-  printk("%d \n", sum);
+
   size_t result = serial_init();
-  printk("got here 2");
+  printk("KERNEL_BOOK_OK");
   struct MemoryRegion regions[MAX_REGIONS];
-  printk("got here 3");
+
   test_pmm();
-  printk("got here 4");
+
   print_hex64(regions->base);
-  printk("\n");
+
   print_hex64(regions->len);
-  printk("\n");
+
   print_hex64(regions->base + regions->len);
-  printk("\n");
+
   init_gdt();
   gdt_flush();
 
@@ -218,15 +216,11 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   terminal_initialize();
 
-  printk("hello from kernel land!");
-
   rust_idt_entry();
   init_paging();
+  init_heap_rust();
 
   // rust_parse_multiboot_map(0, 0);
 
-  rust_parse_multiboot_map(magic, mbi_phys);
-
-  printk("%s", "\n");
-  printk("%s", "Hello From Kernel land!\n");
+  //  rust_parse_multiboot_map(magic, mbi_phys);
 }

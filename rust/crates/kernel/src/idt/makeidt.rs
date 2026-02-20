@@ -1,4 +1,3 @@
-use crate::serial_println;
 use core::ffi::c_void;
 
 unsafe extern "C" {
@@ -37,7 +36,7 @@ impl IdtEntry {
 
     pub fn isr(mut self, isr_routine: u32) -> Self {
         let low_bits = isr_routine & 0xFFFF;
-        serial_println!("hello");
+
         self
     }
 }

@@ -1,7 +1,7 @@
 # =========================
 # Toolchain
 # =========================
-CC      := i686-elf-gcc
+CC      ?= i686-elf-gcc
 QEMU    := qemu-system-i386
 GDB     := gdb
 ISO_DIR     := iso
@@ -86,7 +86,7 @@ iso: iso_root
 	grub2-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
 
 run-grub: iso
-	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -device isa-debug-exit,iobase=0xf4,iosize=0x04 -serial stdio
+	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -device isa-debug-exit,iobase=0xf4,iosize=0x04 -serial stdio -no-reboot -display none
 
 debug-grub: iso
 	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -serial file:serial.log -s -S
