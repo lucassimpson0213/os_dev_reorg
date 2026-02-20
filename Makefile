@@ -88,7 +88,6 @@ iso: iso_root
 run-grub: iso
 	@set -e; \
 	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M \
-	  -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
 	  -serial stdio -no-reboot -display none; \
 	ec=$$?; \
 	if [ $$ec -eq 33 ]; then \
