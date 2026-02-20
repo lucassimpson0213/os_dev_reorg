@@ -1,16 +1,14 @@
 name: kernel-ci
 
-permissions:
-  contents: write
-  pull-requests: write
   
 on:
   push:
     branches: [dev]
   workflow_dispatch:
 
+# 👇 THIS is where it goes (NOT inside jobs)
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 concurrency:
