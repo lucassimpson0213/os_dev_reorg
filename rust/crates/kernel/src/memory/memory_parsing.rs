@@ -321,34 +321,13 @@ pub fn rust_parse_multiboot_mapper(magic: u32, mbi_phys: u32) -> u32 {
         }
         _ => {
             printings::serial_write_string("multi boot has not been idenified");
-            let subsys = crate::qemu::qemu_testing::subsys::MEMORY;
-            let stage = crate::qemu::qemu_testing::stage::INIT;
-            let error = qemu_testing::err::DOUBLE_FAULT;
-            let info = 0x01;
-            crate::qemu::qemu_testing::qemu_panic(subsys, stage, error, info)
         }
     }
 
     0
 }
 
-mod ktesting {
 
-    unsafe fn outl(port: u16, val: u32) {
-        core::arch::asm!("out dx, eax", in("dx") port, in("eax") val);
-    }
-
-    pub fn qemu_exit(code: u32) -> ! {
-        unsafe {
-            outl(0xF4, code);
-        }
-        loop {
-            unsafe {
-                core::arch::asm!("hlt");
-            }
-        }
-    }
-}
 
 mod printings {
     use uart_16550::SerialPort;

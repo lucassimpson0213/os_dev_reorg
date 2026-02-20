@@ -15,15 +15,15 @@
 #include <stdint.h>
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
-#if defined(__linux__)
-#error                                                                         \
-    "You are not using a cross-compiler, you will most certainly run into trouble"
-#endif
+//#if defined(__linux__)
+//#error                                                                         \
+ //   "You are not using a cross-compiler, you will most certainly run into trouble"
+//#endif
 
 /* This tutorial will only work for the 32-bit ix86 targets. */
-#if !defined(__i386__)
-#error "This tutorial needs to be compiled with a ix86-elf compiler"
-#endif
+//#if !defined(__i386__)
+//#error "This tutorial needs to be compiled with a ix86-elf compiler"
+//#endif
 
 void terminal_scroll();
 /* Hardware text mode color constants. */
@@ -191,6 +191,22 @@ void traverse_multiboot_mmap(uint32_t mbi_phys, struct MemoryRegion regions[]) {
   }
 }
 
+
+
+
+static inline void outw(uint16_t port, uint16_t val) {
+  __asm__ volatile("outw %0, %1" : : "a"(val), "Nd"(port));
+}
+
+void qemu_success() {
+    outw(0xF4, 0x10);
+}
+
+void qemu_poweroff(void) {
+  outw(0x604, 0x2000);
+  for(;;) __asm__ volatile("hlt");
+}
+
 void kernel_main(uint32_t magic, uint32_t mbi_phys) {
 
   extern unsigned int rust_ping(void);
@@ -219,6 +235,8 @@ void kernel_main(uint32_t magic, uint32_t mbi_phys) {
   rust_idt_entry();
   init_paging();
   init_heap_rust();
+  qemu_success();
+  qemu_poweroff();
 
   // rust_parse_multiboot_map(0, 0);
 

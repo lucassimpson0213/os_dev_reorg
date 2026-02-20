@@ -1,7 +1,7 @@
 # =========================
 # Toolchain
 # =========================
-CC      := i686-elf-gcc
+CC      := i686-linux-gnu-gcc
 QEMU    := qemu-system-i386
 GDB     := gdb
 ISO_DIR     := iso
@@ -86,7 +86,15 @@ iso: iso_root
 	grub2-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
 
 run-grub: iso
-	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -device isa-debug-exit,iobase=0xf4,iosize=0x04 -serial stdio -no-reboot -display none
+	@set -e; \
+	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M \
+	  -serial stdio -no-reboot -display none; \
+	ec=$$?; \
+	if [ $$ec -eq 33 ]; then \
+	  echo "QEMU: debug-exit success (33)"; \
+	  exit 0; \
+	fi; \
+	exit $$ec
 
 debug-grub: iso
 	$(QEMU) -cdrom $(ISO_IMAGE) -m 256M -serial file:serial.log -s -S
@@ -111,7 +119,7 @@ $(BUILD_DIR):
 # Rust build
 # =========================
 $(RUST_LIB):
-	cd $(RUST_DIR) && cargo build --target i686-os.json
+	cd $(RUST_DIR) && cargo +nightly build -Zjson-target-spec --target i686-os.json
 
 # =========================
 # Compile rules
