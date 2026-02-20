@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  packages: write   # needed to push to GHCR with GITHUB_TOKEN
+  packages: write
 
 concurrency:
   group: boot-gate-pr-dev
@@ -18,7 +18,7 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     outputs:
-      image: ${{ steps.meta.outputs.tags }}
+      image: ${{ steps.out.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,6 +42,11 @@ jobs:
             type=sha
             type=raw,value=dev
 
+      - name: Choose container image ref (single tag)
+        id: out
+        run: |
+          echo "image=ghcr.io/${{ github.repository_owner }}/kernel-ci:dev" >> "$GITHUB_OUTPUT"
+
       - name: Build + push (with cache)
         uses: docker/build-push-action@v6
         with:
@@ -57,12 +62,14 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ${{ needs.build-image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # (Optional) keep rust-cache even though you have container caching;
-      # it still helps if you rebuild often and your crate graph is big.
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -70,16 +77,16 @@ jobs:
             rust/crates/kernel -> rust/target
 
       - name: Build ISO
+        working-directory: rust/crates/kernel
         run: |
           set -euo pipefail
           make run-grub
-        working-directory: rust/crates/kernel
 
       - name: Boot in QEMU (GRUB)
+        working-directory: rust/crates/kernel
         run: |
           set -euo pipefail
           timeout 25s make run-grub | tee qemu.log
-        working-directory: rust/crates/kernel
 
       - name: Open PR dev -> stable (only if none exists)
         env:
