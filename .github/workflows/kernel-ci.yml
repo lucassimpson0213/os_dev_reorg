@@ -55,7 +55,7 @@ jobs:
       - name: Build ISO
         run: |
           set -euo pipefail
-          make CC=i686-linux-gnu-gcc iso
+          make run-grub
 
       - name: Boot in QEMU (GRUB)
         run: |
