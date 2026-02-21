@@ -1,0 +1,47 @@
+pull_request_rules:
+
+  #
+  # 1 — Automatically label PRs based on branch name
+  #
+  - name: label feature branches
+    conditions:
+      - head~=^feature/
+    actions:
+      label:
+        add:
+          - feature
+
+  - name: label bugfix branches
+    conditions:
+      - head~=^fix/
+    actions:
+      label:
+        add:
+          - fix
+
+  #
+  # 2 — Automatically rebase PRs when base branch changes
+  #
+  - name: automatic rebase
+    conditions:
+      - base=main
+      - "#commits-behind>0"
+    actions:
+      rebase: {}
+
+  #
+  # 3 — Ready-to-merge rule (THE important one)
+  #
+  - name: auto merge when ready
+    conditions:
+      - base=main
+      - author!=mergify[bot]
+      - status-success=ci
+      - status-success=lint
+      - status-success=typecheck
+      - "#approved-reviews-by>=1"
+      - -draft
+    actions:
+      queue:
+        name: default
+        method: squash
