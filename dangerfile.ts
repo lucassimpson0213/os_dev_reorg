@@ -119,3 +119,77 @@ const touchedChangelog = allFiles.some(f => /changelog/i.test(f));
 if (touchesRust && !touchedChangelog) {
   message("Rust code changed — consider updating CHANGELOG.md if user-facing.");
 }
+
+//
+// -------------------------------
+// 8) PR TEMPLATE STRUCTURE
+// -------------------------------
+//
+
+// helper: section exists
+function hasSection(title: string) {
+  const regex = new RegExp(`##\\s*${title}`, "i");
+  return regex.test(body);
+}
+
+// helper: get section content
+function getSection(title: string): string {
+  const regex = new RegExp(
+    `##\\s*${title}[\\s\\S]*?(?=\\n##|$)`,
+    "i"
+  );
+  const match = body.match(regex);
+  return match ? match[0] : "";
+}
+
+//
+// HARD SAFETY RULES (fail)
+//
+
+// ---- Verify Steps ----
+if (!hasSection("How can a reviewer verify\\?")) {
+  fail("Missing **How can a reviewer verify?** section.");
+} else {
+  const verify = getSection("How can a reviewer verify\\?");
+  if (!/\d+\.\s+/.test(verify)) {
+    fail(`
+The **How can a reviewer verify?** section must contain numbered reproduction steps.
+
+Example:
+
+1. docker compose up
+2. upload test.json to S3
+3. observe Step Function completes
+`);
+  }
+}
+
+// ---- System Impact ----
+if (!hasSection("System Impact")) {
+  fail("Missing **System Impact** section.");
+} else {
+  const impact = getSection("System Impact");
+  if (!/-\s*\[[xX]\]/.test(impact)) {
+    fail(`
+You must check at least one box in **System Impact**.
+
+This ensures the author consciously considers behavioral impact.
+`);
+  }
+}
+
+//
+// SOFT STRUCTURE RULES (warn only)
+//
+
+const recommendedSections = [
+  "What does this change do\\?",
+  "Why is this change needed\\?",
+  "Risks"
+];
+
+for (const sec of recommendedSections) {
+  if (!hasSection(sec)) {
+    warn(`Consider filling out **${sec.replace("\\", "")}** to help reviewers understand the change.`);
+  }
+}
