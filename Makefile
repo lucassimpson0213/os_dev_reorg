@@ -1,7 +1,7 @@
 # =========================
 # Toolchain
 # =========================
-CC      := i686-linux-gnu-gcc
+CC      := i686-elf-gcc
 QEMU    := qemu-system-i386
 GDB     := gdb
 ISO_DIR     := iso
@@ -119,7 +119,7 @@ $(BUILD_DIR):
 # Rust build
 # =========================
 $(RUST_LIB):
-	cd $(RUST_DIR) && cargo +nightly build -Zjson-target-spec --target i686-os.json
+	cd $(RUST_DIR) && cargo +nightly build --target i686-os.json
 
 # =========================
 # Compile rules
